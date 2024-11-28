@@ -1,0 +1,45 @@
+from pymongo import MongoClient, InsertOne
+import json
+import pymongo
+
+import pprint
+
+client = MongoClient('localhost', 27017) # подсоединяюсь к локальному хосту
+
+db = client['hh_ru'] # создаю новый датафрейм
+work = db.work
+
+# Беру данные из файла json
+with open('box_office_data.json') as f:
+    templates = json.load(f)
+
+print(templates)
+
+# Передаю единичные данные в локальный сервер MongoDB
+work.insert_one(templates)
+
+for i in templates:
+    try:
+        dict = {}
+        dict[i] = templates[i]
+        work.insert_one(dict)
+    except pymongo.errors.DuplicateKeyError:
+        continue
+
+# Добавить единичный данные
+test_dict = {'Уборщик':["Рога и копыта","Уровень дохода не указан", "Требуемый опыт работы: 3–6 лет"]}
+work.insert_one(test_dict)
+
+# Прочесть данные с локального хоста MongoDB
+for doc in work.find():
+    print(doc)
+
+# Поиск с фильтром
+print("____")
+for doc in work.find({"Уборщик": ["Рога и копыта", "Уровень дохода не указан", "Требуемый опыт работы: 3–6 лет"]}):
+    print(doc)
+
+# Поиск с фильтром с условием
+print("****")
+for doc in work.find({"$or":[{"Уборщик": ["Рога и копыта", "Уровень дохода не указан", "Требуемый опыт работы: 3–6 лет"]}, {'FFF': [1,2,3]}]}):
+    print(doc)
